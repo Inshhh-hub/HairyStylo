@@ -1,8 +1,8 @@
 const { getKey, callGemini, parseImage, rateLimited, send, readBody, apiMessage } = require('./_gemini');
 
-// Realistic try-on on the user's own photo. Two providers, tried in this order (TRYON_PROVIDER=auto):
-//  1. Cloudflare Workers AI, FLUX.2 [klein] 4B image editing: has a free daily allowance, no card needed.
-//  2. Gemini image editing: Google lists no free tier for image-output models, so this needs billing.
+// Realistic try-on on the user's own photo. Providers, tried in this order (TRYON_PROVIDER=auto):
+//  1. Cloudflare Workers AI, FLUX.2 [klein] 4B image editing: free daily allowance, no card needed.
+//  2. Gemini image editing: Google lists no free tier for image-output models, so it needs billing.
 // Force one with TRYON_PROVIDER=cloudflare or TRYON_PROVIDER=gemini.
 const CF_MODEL = process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b';
 const GEMINI_IMAGE_MODELS = ['gemini-3.1-flash-image', 'gemini-3.1-flash-lite-image'];
@@ -11,16 +11,19 @@ function cfConfig() {
   return { account: (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim(), token: (process.env.CLOUDFLARE_API_TOKEN || '').trim() };
 }
 
-function prompt(style, look, gender) {
-  const who = gender === 'female' ? 'woman' : gender === 'male' ? 'man' : 'person';
-  return `Edit this real photograph of a ${who}. Change ONLY the hairstyle to: ${style}. ${look || ''}
-Keep EXACTLY the same face, identity, facial features, skin tone, skin texture, expression, head angle, clothing, background and lighting. The result must be a natural, photorealistic photograph: real individual hair strands, natural hairline blending into the forehead, correct shadows and hair colour matching the person's current hair colour. Do NOT apply cartoon, illustration, 3D, filter, wig-like or animated effects. Do not change anything except the hair.`;
-}
+// Safety rules appended to whatever haircut description the page sends.
+const RULES = `\n\nIMPORTANT: Keep EXACTLY the same person: same face, identity, facial features, skin tone, expression, head angle, clothing, background and lighting. Change only the hair (and facial hair if asked). The result must be a natural, photorealistic photograph with real individual hair strands and a natural hairline. Do NOT make it a cartoon, illustration, 3D render, filter, wig or animated effect.`;
 
-function dim(n, fallback) {
-  n = parseInt(n, 10);
-  if (!(n >= 256 && n <= 1920)) return fallback;
-  return Math.round(n / 16) * 16; // FLUX wants multiples of 16
+function round16(n) { return Math.round(n / 16) * 16; }
+function clampDim(n) { return Math.min(1920, Math.max(256, round16(n))); }
+
+// Output size: same aspect as the small input, long side TRYON_OUT_LONG (default 672 = about 2 billing tiles).
+function outputSize(w, h) {
+  w = parseInt(w, 10); h = parseInt(h, 10);
+  if (!(w >= 64 && w <= 1920 && h >= 64 && h <= 1920)) return { w: 512, h: 672 };
+  const long = Math.min(1920, Math.max(256, parseInt(process.env.TRYON_OUT_LONG, 10) || 672));
+  const s = long / Math.max(w, h);
+  return { w: clampDim(w * s), h: clampDim(h * s) };
 }
 
 function mimeFromB64(b64) {
@@ -52,10 +55,9 @@ async function cloudflareEdit(small, p, w, h, timeoutMs) {
     }
     const text = await r.text();
     let j = null; try { j = JSON.parse(text); } catch (e) { /* not JSON */ }
-    let b64 = j && ((j.result && j.result.image) || j.image);
+    const b64 = j && ((j.result && j.result.image) || j.image);
     if (r.ok && typeof b64 === 'string' && b64.length > 100) {
-      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(b64);
-      if (m) return { ok: true, status: 200, image: b64 };
+      if (/^data:image\/[a-z+]+;base64,/i.test(b64)) return { ok: true, status: 200, image: b64 };
       return { ok: true, status: 200, image: `data:${mimeFromB64(b64)};base64,${b64}` };
     }
     const msg = (j && Array.isArray(j.errors) && j.errors[0] && j.errors[0].message) || apiMessage(j, text.slice(0, 200));
@@ -69,18 +71,16 @@ async function cloudflareEdit(small, p, w, h, timeoutMs) {
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { ok: false, message: 'Use POST.' });
-  if (rateLimited(req, 10, 10 * 60 * 1000)) {
+  if (rateLimited(req, 12, 10 * 60 * 1000)) {
     return send(res, 429, { ok: false, code: 'RATE', message: 'Too many try-ons in a short time. Please wait a few minutes.' });
   }
   const body = readBody(req);
   const img = body && parseImage(body.image);
-  if (!img) return send(res, 400, { ok: false, code: 'BAD_IMAGE', message: 'Photo missing or too large. Please retake it.' });
+  if (!img) return send(res, 400, { ok: false, code: 'BAD_IMAGE', message: 'Photo missing or too large. Please rescan.' });
   const small = parseImage(body.small) || img;
-  const style = String(body.style || '').slice(0, 80).replace(/[\r\n]+/g, ' ').trim();
-  const look = String(body.look || '').slice(0, 300).replace(/[\r\n]+/g, ' ').trim();
-  if (!style) return send(res, 400, { ok: false, code: 'BAD_STYLE', message: 'No hairstyle chosen.' });
-  const gender = ['male', 'female', 'any'].includes(body.gender) ? body.gender : 'any';
-  const p = prompt(style, look, gender);
+  const userPrompt = String(body.prompt || '').replace(/\u0000/g, '').trim().slice(0, 2500);
+  if (userPrompt.length < 10) return send(res, 400, { ok: false, code: 'BAD_PROMPT', message: 'No haircut description was sent.' });
+  const p = userPrompt + RULES;
 
   const cf = cfConfig();
   const hasCF = !!(cf.account && cf.token);
@@ -88,8 +88,8 @@ module.exports = async (req, res) => {
   const mode = String(process.env.TRYON_PROVIDER || 'auto').toLowerCase();
   const order = mode === 'gemini' ? ['gemini'] : mode === 'cloudflare' ? ['cloudflare'] : [hasCF ? 'cloudflare' : null, hasGemini ? 'gemini' : null].filter(Boolean);
 
-  if (!order.length || (order.length === 1 && order[0] === 'cloudflare' && !hasCF)) {
-    return send(res, 402, { ok: false, code: 'TRYON_UNAVAILABLE', message: 'Photo try-on is not set up yet. Add the free Cloudflare keys (CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN) in Vercel and redeploy. Your face analysis and barber instructions still work.' });
+  if (!order.length || (order.length === 1 && order[0] === 'cloudflare' && !hasCF) || (order.length === 1 && order[0] === 'gemini' && !hasGemini)) {
+    return send(res, 402, { ok: false, code: 'TRYON_UNAVAILABLE', message: 'Realistic try-on is not set up yet. Add the free Cloudflare keys (CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN) in Vercel and redeploy. Your face analysis and barber card still work.' });
   }
 
   const started = Date.now();
@@ -100,8 +100,8 @@ module.exports = async (req, res) => {
     if (remaining < 8000) break;
 
     if (provider === 'cloudflare') {
-      const w = dim(body.w, 480), h = dim(body.h, 640);
-      const r = await cloudflareEdit(small, p, w, h, remaining);
+      const o = outputSize(body.w, body.h);
+      const r = await cloudflareEdit(small, p, o.w, o.h, remaining);
       if (r.ok) return send(res, 200, { ok: true, provider: 'cloudflare', image: r.image });
       last = { status: r.status, msg: r.msg };
       if (r.status === 429) cfLimit = true;
@@ -131,11 +131,11 @@ module.exports = async (req, res) => {
   if (cfLimit) {
     return send(res, 429, { ok: false, code: 'TRYON_LIMIT', message: 'Today\'s free try-on allowance is used up. It resets daily, so please try again tomorrow.' });
   }
-  if (last && (last.status === 401 || last.status === 403)) {
-    return send(res, 401, { ok: false, code: 'BAD_KEY', message: 'The try-on provider rejected its key. Check CLOUDFLARE_API_TOKEN (needs Workers AI permission) and CLOUDFLARE_ACCOUNT_ID in Vercel.' });
+  if (last && (last.status === 401 || last.status === 403) && !last.gemini) {
+    return send(res, 401, { ok: false, code: 'BAD_KEY', message: 'The try-on service rejected its key. Check CLOUDFLARE_API_TOKEN (needs Workers AI permission) and CLOUDFLARE_ACCOUNT_ID in Vercel.' });
   }
-  if (last && last.gemini && (last.status === 429 || last.status === 404)) {
-    return send(res, 402, { ok: false, code: 'TRYON_UNAVAILABLE', message: 'Photo try-on is not available: Gemini image editing needs billing, and the free Cloudflare keys are not set. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in Vercel (free), then redeploy.' });
+  if (last && last.gemini && (last.status === 429 || last.status === 404 || last.status === 403)) {
+    return send(res, 402, { ok: false, code: 'TRYON_UNAVAILABLE', message: 'Realistic try-on is not available: Gemini image editing needs billing, and the free Cloudflare keys are not set. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in Vercel (free), then redeploy.' });
   }
   return send(res, 502, { ok: false, code: 'UPSTREAM', message: 'Try-on failed. ' + (last ? String(last.msg).slice(0, 200) : '') });
 };
