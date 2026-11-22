@@ -716,6 +716,39 @@ HS.Renderer = (function () {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
+
+  /** Puts the REAL face (eyebrows down, soft edges) back over an AI try-on picture, so the
+      identity stays exactly yours and only the hair comes from the AI.
+      before: the 840x1120 cropped scan photo; ai: the AI image (same framing); m: face model. */
+  function blendRealFace(before, ai, m) {
+    const w = before.width, h = before.height;
+    const out = document.createElement('canvas'); out.width = w; out.height = h;
+    const o = out.getContext('2d');
+    o.drawImage(ai, 0, 0, w, h);
+    const v = viewFor(w, h), k = m.faceLen / 2.3;
+    // soft mask of the face outline (shadow trick = feathered edge in every browser)
+    const mk = document.createElement('canvas'); mk.width = w; mk.height = h;
+    const mc = mk.getContext('2d'), OFF = 6000;
+    mc.shadowColor = '#000'; mc.shadowBlur = Math.max(6, w * 0.012); mc.shadowOffsetX = OFF;
+    mc.setTransform(v[0], 0, 0, v[3], v[4] - OFF, v[5]);
+    mc.fillStyle = '#000'; mc.fill(facePath(m));
+    mc.setTransform(1, 0, 0, 1, 0, 0);
+    // fade the top: keep the AI forehead / fringe, keep your real eyebrows, eyes and everything below
+    const y0 = v[3] * (m.browY - 0.30 * k) + v[5], y1 = v[3] * (m.browY - 0.04 * k) + v[5];
+    const g = mc.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    mc.globalCompositeOperation = 'destination-in';
+    mc.fillStyle = g; mc.fillRect(0, 0, w, h);
+    // real face, cut with that mask, laid on top
+    const fc = document.createElement('canvas'); fc.width = w; fc.height = h;
+    const f = fc.getContext('2d');
+    f.drawImage(before, 0, 0);
+    f.globalCompositeOperation = 'destination-in';
+    f.drawImage(mk, 0, 0);
+    o.drawImage(fc, 0, 0);
+    return out;
+  }
+
   /** Small outline icon of a face shape (used in the "adjust" chips). */
   function drawShapeIcon(canvas, shape, color) {
     const ctx = setup(canvas);
@@ -750,6 +783,6 @@ HS.Renderer = (function () {
 
   return {
     modelFromLandmarks, modelFromSynthetic, drawAvatar, drawOnPhoto, drawShapeIcon, drawFaceMap,
-    hairGeometry, beardShapes, mix, viewFor
+    hairGeometry, beardShapes, mix, viewFor, blendRealFace
   };
 })();

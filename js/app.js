@@ -413,9 +413,12 @@
     drawPreview();
     const snapshot = state.analysis;
     try {
-      state.ai.cache[key] = await HS.TryOn.generate(beforeCanvas(), {
+      const res = await HS.TryOn.generate(beforeCanvas(), {
         style: currentRank().style, colour: currentColour(), beard: state.beard, gender: state.gender, hairType: state.hairType
       });
+      try { res.img = R.blendRealFace(beforeCanvas(), res.img, state.analysis.model); }   // keep YOUR real face, take only the hair from the AI
+      catch (e) { console.warn('face blend skipped', e); }
+      state.ai.cache[key] = res;
     } catch (e) {
       console.error(e);
       state.ai.err = e; state.ai.errKey = key;
@@ -433,7 +436,7 @@
   $('#ai-again').addEventListener('click', () => { delete state.ai.cache[aiKey()]; generateNow(); });
   $('#ai-save').addEventListener('click', () => {
     const res = aiResult(); if (!res) return;
-    const c = document.createElement('canvas'); c.width = res.img.naturalWidth; c.height = res.img.naturalHeight;
+    const c = document.createElement('canvas'); c.width = res.img.naturalWidth || res.img.width; c.height = res.img.naturalHeight || res.img.height;
     c.getContext('2d').drawImage(res.img, 0, 0);
     c.toBlob(blob => {
       const url = URL.createObjectURL(blob), a = document.createElement('a');
