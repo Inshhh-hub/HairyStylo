@@ -21,14 +21,28 @@ Vercel's dashboard imports from Git, it has no "upload ZIP" button. Pick one:
 
 The key lives only on Vercel's server (`api/*.js`); it is never in the page and never in this ZIP. Open `https://YOUR-SITE.vercel.app/api/health` to check: it should say `"keyConfigured":true`.
 
+## Realistic photo try-on (free, Cloudflare)
+
+The "See it on my photo" button edits your real photo with Cloudflare Workers AI (FLUX.2 klein 4B). Cloudflare gives a free daily allowance (10,000 neurons per day, no card needed). Setup:
+
+1. Sign up free at https://dash.cloudflare.com
+2. Open the Workers AI page (dashboard > AI > Workers AI), choose "Use REST API". It shows your **Account ID** and a button to **Create a Workers AI API Token**. Create it and copy the token.
+3. In Vercel > Settings > Environment Variables add:
+   - `CLOUDFLARE_ACCOUNT_ID` = your account id
+   - `CLOUDFLARE_API_TOKEN` = the token
+4. Redeploy. Check `/api/health`: it should show `"tryonCloudflare":true`.
+
+Notes: the free model only accepts small input photos, so the site sends a 480px copy and the result is about that size. Quality has not been tested against real photos by the author: check a few results before relying on it.
+
+If Cloudflare is not set or fails, the site falls back to Gemini image editing (only works if the Gemini key's Google project has billing). Force a provider with `TRYON_PROVIDER=cloudflare` or `gemini`.
+
 ## What is free and what is not
 
-| Feature | Model | Free tier |
+| Feature | Provider | Cost |
 |---|---|---|
-| Face shape, skin tone, hair type, haircut list, barber instructions | gemini-2.5-flash (falls back to other free Flash / Flash-Lite models) | Yes, free with rate limits |
-| "See it on my photo" (realistic hair edit on your real photo) | gemini-3.1-flash-image | No. Google lists no free tier for any image-output Gemini model (checked Nov 2026) |
-
-If the key has no image access, the try-on button explains that and the rest of the app keeps working. To enable realistic try-on, turn on billing for the key's Google Cloud project (roughly a few cents per image) and redeploy. You can pick another model with `GEMINI_IMAGE_MODEL`; change the analysis model with `GEMINI_TEXT_MODEL`.
+| Face shape, skin tone, hair, haircut list, barber notes | Gemini Flash models | Free tier (rate limits) |
+| Photo try-on | Cloudflare FLUX.2 klein 4B | Free daily allowance, then it stops until tomorrow |
+| Photo try-on (optional fallback) | Gemini image models | Paid only (no Gemini image model has a free tier) |
 
 ## Notes
 - The camera needs HTTPS, which Vercel provides.

@@ -88,15 +88,23 @@
   });
 
   // Downscale to max 1024px JPEG so the upload is small, fast and under Vercel's body limit.
-  function toJpeg(source, w, h) {
-    var max = 1024, s = Math.min(1, max / Math.max(w, h));
+  function toJpegSized(source, w, h, max, q) {
+    var s = Math.min(1, max / Math.max(w, h));
     var c = document.createElement('canvas');
     c.width = Math.round(w * s); c.height = Math.round(h * s);
     c.getContext('2d').drawImage(source, 0, 0, c.width, c.height);
-    return c.toDataURL('image/jpeg', 0.88);
+    return { url: c.toDataURL('image/jpeg', q), w: c.width, h: c.height };
   }
+  function toJpeg(source, w, h) { return toJpegSized(source, w, h, 1024, 0.88).url; }
   function setPhoto(dataUrl) {
     state.photo = dataUrl;
+    state.small = null;
+    // Small copy (max 480px) used by the free Cloudflare try-on model, which only accepts small inputs.
+    var im = new Image();
+    im.onload = function () {
+      try { if (state.photo === dataUrl) state.small = toJpegSized(im, im.naturalWidth, im.naturalHeight, 480, 0.92); } catch (e) { /* ignore */ }
+    };
+    im.src = dataUrl;
     var p = $('preview');
     p.src = dataUrl; p.hidden = false;
     $('video').hidden = true;
@@ -252,7 +260,7 @@
     var row = h('div', { class: 'row' });
     var copyBtn = h('button', { class: 'btn ghost', type: 'button', text: 'Copy barber notes' });
     copyBtn.addEventListener('click', function () { copyText(barberText(rec), copyBtn); });
-    var tryBtn = h('button', { class: 'btn', type: 'button', text: 'See it on my photo' });
+    var tryBtn = h('button', { class: 'btn primary', type: 'button', text: 'See it on my photo' });
     tryBtn.addEventListener('click', function () { tryOn(rec, tryBtn, out); });
     row.appendChild(tryBtn); row.appendChild(copyBtn);
     card.appendChild(row);
@@ -273,14 +281,14 @@
   function tryOn(rec, btn, out) {
     out.textContent = '';
     if (state.tryonBlocked) {
-      out.appendChild(h('p', { class: 'msg', text: state.tryonMsg || 'Photo try-on is not enabled on this Gemini key.' }));
+      out.appendChild(h('p', { class: 'msg', text: state.tryonMsg || 'Photo try-on is not set up yet.' }));
       return;
     }
     btn.disabled = true;
     var oldText = btn.textContent;
     btn.textContent = 'Styling your photo...';
-    out.appendChild(h('p', { class: 'msg', text: 'Gemini is editing your real photo. This can take up to 30 seconds.' }));
-    post('/api/tryon', { image: state.photo, style: str(rec.name), look: str(rec.look), gender: state.gender })
+    out.appendChild(h('p', { class: 'msg', text: 'Editing your real photo. This can take up to 30 seconds.' }));
+    post('/api/tryon', { image: state.photo, small: state.small && state.small.url, w: state.small && state.small.w, h: state.small && state.small.h, style: str(rec.name), look: str(rec.look), gender: state.gender })
       .then(function (j) {
         out.textContent = '';
         btn.disabled = false; btn.textContent = oldText;
@@ -290,8 +298,8 @@
           out.appendChild(h('div', { class: 'pair' }, before, after));
           return;
         }
-        if (j.code === 'TRYON_NEEDS_BILLING') { state.tryonBlocked = true; state.tryonMsg = j.message; }
-        out.appendChild(h('p', { class: 'msg' + (j.code === 'TRYON_NEEDS_BILLING' ? '' : ' err'), text: j.message || 'Try-on failed. Please try again.' }));
+        if (j.code === 'TRYON_UNAVAILABLE') { state.tryonBlocked = true; state.tryonMsg = j.message; }
+        out.appendChild(h('p', { class: 'msg' + (j.code === 'TRYON_UNAVAILABLE' || j.code === 'TRYON_LIMIT' ? '' : ' err'), text: j.message || 'Try-on failed. Please try again.' }));
       })
       .catch(function () {
         out.textContent = '';
