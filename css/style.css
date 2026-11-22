@@ -345,3 +345,5 @@ main { max-width: 1120px; margin: 0 auto; padding: clamp(18px, 4vw, 40px) clamp(
 .sides-cta p { margin: 0 0 10px; font-size: 14px; }
 .sides-cta .row { display: flex; gap: 10px; flex-wrap: wrap; }
 #sides-msg { color: #ffb4a6; }
+
+.match.making { border-color: rgba(255, 184, 107, .5); }

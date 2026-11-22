@@ -71,7 +71,7 @@ async function cloudflareEdit(small, p, w, h, timeoutMs) {
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { ok: false, message: 'Use POST.' });
-  if (rateLimited(req, 12, 10 * 60 * 1000)) {
+  if (rateLimited(req, 40, 10 * 60 * 1000)) {
     return send(res, 429, { ok: false, code: 'RATE', message: 'Too many try-ons in a short time. Please wait a few minutes.' });
   }
   const body = readBody(req);

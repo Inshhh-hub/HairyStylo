@@ -223,8 +223,10 @@
       if (state.ai !== aiState) return;
       aiState.ready = v;
       if (document.querySelector('#screen-results.active') && state.raw && state.raw.photo) drawPreview();
+      if (v === true && state.ranked.length && document.querySelector('#screen-results.active') && state.raw.photo) setTimeout(() => startThumbs(), 800);
     });
     state.beard = state.gender === 'male' ? HS.BEARD_FOR_SHAPE[face.shape].recs[0] : 'none';
+    state.thumbBeard = state.beard;
 
     // the "analysing" screen ticks through the steps
     show('analyzing');
@@ -309,7 +311,8 @@
   /* ---------- the preview: realistic AI try-on on YOUR photo / before ---------- */
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const currentColour = () => colourOptions()[state.colourIdx] || colourOptions()[0];
-  const aiKey = (a) => [a || state.angle, currentRank().style.id, currentColour().name, state.gender === 'male' ? state.beard : '-', state.hairType].join('|');
+  const keyFor = (a, st, col, beard) => [a, st.id, col.name, state.gender === 'male' ? beard : '-', state.hairType].join('|');
+  const aiKey = (a) => keyFor(a || state.angle, currentRank().style, currentColour(), state.beard);
   const aiResult = (a) => state.ai.cache[aiKey(a)];
   /* the photo + face model of one angle: 'front' (the main scan) or a side view */
   function angleData(a) {
@@ -415,27 +418,78 @@
     }
   }
 
-  async function generateNow(ang) {
-    ang = ang || state.angle;
-    const key = aiKey(ang);
-    if (state.ai.busy[key]) return;
-    state.ai.busy[key] = true; state.ai.err = null;
-    drawPreview();
-    const snapshot = state.analysis;
+  /** one AI try-on (cached). spec = { style, colour, beard }. Returns the result, or null if the same one is already being made. */
+  async function makeTryOn(ang, spec) {
+    const key = keyFor(ang, spec.style, spec.colour, spec.beard);
+    if (state.ai.cache[key]) return state.ai.cache[key];
+    if (state.ai.busy[key]) return null;
+    state.ai.busy[key] = true;
     try {
       const res = await HS.TryOn.generate(beforeCanvas(ang), {
-        style: currentRank().style, colour: currentColour(), beard: state.beard, gender: state.gender, hairType: state.hairType, angle: ang
+        style: spec.style, colour: spec.colour, beard: spec.beard, gender: state.gender, hairType: state.hairType, angle: ang
       });
       try { res.img = R.blendRealFace(beforeCanvas(ang), res.img, angleData(ang).model); }   // keep YOUR real face, take only the hair from the AI
       catch (e) { console.warn('face blend skipped', e); }
       state.ai.cache[key] = res;
-    } catch (e) {
-      console.error(e);
-      state.ai.err = e; state.ai.errKey = key;
-    } finally {
-      delete state.ai.busy[key];
-      if (state.analysis === snapshot && document.querySelector('#screen-results.active')) { drawPreview(); renderBarber(); }
+      return res;
+    } finally { delete state.ai.busy[key]; }
+  }
+  const onResults = () => !!document.querySelector('#screen-results.active');
+
+  async function generateNow(ang) {
+    ang = ang || state.angle;
+    const spec = { style: currentRank().style, colour: currentColour(), beard: state.beard };
+    const key = keyFor(ang, spec.style, spec.colour, spec.beard);
+    if (state.ai.busy[key]) return;
+    state.ai.err = null;
+    const snapshot = state.analysis;
+    const p = makeTryOn(ang, spec);     // marks itself busy straight away
+    drawPreview();
+    try { await p; }
+    catch (e) { console.error(e); state.ai.err = e; state.ai.errKey = key; }
+    finally {
+      if (state.analysis === snapshot && onResults()) { drawPreview(); renderBarber(); updateThumbs(); }
     }
+  }
+
+  /* ---------- realistic thumbnails for the top matches (your own photo, each haircut) ---------- */
+  const thumbSpec = st => ({ style: st, colour: colourOptions()[0], beard: state.thumbBeard });
+  const thumbKey = st => { const sp = thumbSpec(st); return keyFor('front', sp.style, sp.colour, sp.beard); };
+  function updateThumbs() {
+    if (!state.raw || !state.raw.photo) return;
+    $$('.match').forEach(b => {
+      const r = state.ranked.find(x => x.style.id === b.dataset.id); if (!r) return;
+      const cv = b.querySelector('canvas'), ctx = cv.getContext('2d');
+      const res = state.ai.cache[thumbKey(r.style)];
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      drawCover(ctx, res ? res.img : beforeCanvas('front'), cv.width, cv.height);
+      const busy = state.ai.busy[thumbKey(r.style)];
+      b.classList.toggle('making', !res && !!busy);
+      if (!res) { ctx.fillStyle = 'rgba(12,9,16,0.5)'; ctx.fillRect(0, 0, cv.width, cv.height); }
+      if (!res && busy) { ctx.fillStyle = '#fff'; ctx.font = '600 22px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Creating…', cv.width / 2, cv.height / 2); ctx.textAlign = 'left'; }
+    });
+  }
+  async function startThumbs() {
+    if (!state.raw.photo || state.ai.ready !== true || state.ai.thumbsOn || !state.ranked.length) return;
+    const aiState = state.ai, snapshot = state.analysis;
+    aiState.thumbsOn = true;
+    state.thumbBeard = state.beard;
+    const mine = state.ranked.slice(0, 6).map(r => r.style);
+    const queue = mine.filter(st => st.id !== state.selId).concat(mine.filter(st => st.id === state.selId));
+    let stop = false;
+    const worker = async () => {
+      while (queue.length && !stop && state.ai === aiState) {
+        const st = queue.shift();
+        try { await makeTryOn('front', thumbSpec(st)); }
+        catch (e) { console.warn('thumb', e); if (e && e.kind && e.kind !== 'network') stop = true; }
+        if (state.analysis !== snapshot) return;
+        if (onResults()) {
+          updateThumbs();
+          if (st.id === currentRank().style.id) { drawPreview(); renderBarber(); }
+        }
+      }
+    };
+    await Promise.all([worker(), worker()]);
   }
 
   $('#ai-overlay').addEventListener('click', e => {
@@ -578,10 +632,16 @@
       const cv = document.createElement('canvas'); cv.width = 300; cv.height = 340;
       b.appendChild(cv);
       b.insertAdjacentHTML('beforeend', `<b>${i + 1}. ${r.style.name}</b><small><span class="pct">${r.pct}% match</span> · ${r.style.length}</small>`);
-      b.addEventListener('click', () => { state.selId = r.style.id; renderSelected(); $('#pick-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
+      b.addEventListener('click', () => {
+        state.selId = r.style.id; renderSelected();
+        $('#pick-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (state.raw.photo && state.ai.ready === true && state.angle === 'front' && !aiResult() && !state.ai.busy[aiKey()]) generateNow();
+      });
       box.appendChild(b);
-      R.drawAvatar(cv, an.model, r.style, { skin: an.skin.hex, hair: hairColour(), tex: state.hairType, gender: state.gender, beard: 'none', box: { x0: -2.0, x1: 2.0, y0: -2.6, y1: 2.0 } });
+      if (!state.raw.photo) R.drawAvatar(cv, an.model, r.style, { skin: an.skin.hex, hair: hairColour(), tex: state.hairType, gender: state.gender, beard: 'none', box: { x0: -2.0, x1: 2.0, y0: -2.6, y1: 2.0 } });
     });
+    updateThumbs();     // real photos: your own face with each haircut (made by the AI)
+    if (state.raw.photo) setTimeout(() => startThumbs(), 1200);   // after the first (big) try-on has been started
   }
 
   function renderAvoid() {
