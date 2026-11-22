@@ -1,0 +1,7 @@
+{
+  "name": "hairystylo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HairyStylo - AI haircut recommendations from a face scan, powered by Google Gemini",
+  "engines": { "node": "20.x" }
+}

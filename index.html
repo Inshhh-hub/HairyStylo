@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14110f">
+  <title>HairyStylo - Find your best haircut</title>
+  <meta name="description" content="Scan your face and get the haircut that suits you, with simple instructions to show your barber.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8b04a'/%3E%3Cpath d='M18 44c-2-14 4-24 14-24s16 10 14 24c-4-8-8-12-14-12s-10 4-14 12z' fill='%2314110f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="logo" aria-hidden="true"></span> HairyStylo</div>
+    <div class="tag">AI haircut advisor</div>
+  </header>
+
+  <main>
+    <div id="banner" class="banner" hidden></div>
+
+    <!-- STEP 1: capture -->
+    <section id="stepCapture" class="card">
+      <h1>Find the cut that suits your face</h1>
+      <p class="sub">Take a clear, front-facing photo in good light with your hair visible. Nothing is stored: the photo is sent only to Google Gemini for the analysis.</p>
+
+      <div class="field">
+        <span class="label">I want advice for</span>
+        <div class="chips" id="genderChips" role="radiogroup" aria-label="Gender">
+          <button type="button" class="chip on" data-g="male" role="radio" aria-checked="true">Male</button>
+          <button type="button" class="chip" data-g="female" role="radio" aria-checked="false">Female</button>
+          <button type="button" class="chip" data-g="any" role="radio" aria-checked="false">Either / mix</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <video id="video" playsinline muted autoplay hidden></video>
+        <img id="preview" alt="Your photo" hidden>
+        <div id="placeholder" class="placeholder">
+          <div class="oval"></div>
+          <p>Camera is off</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btnCamera" type="button">Open camera</button>
+        <button class="btn ghost" id="btnSnap" type="button" hidden>Take photo</button>
+        <label class="btn ghost" id="btnUploadLabel">Upload photo
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnAnalyze" type="button" disabled>Analyse my face</button>
+        <button class="btn ghost" id="btnRetake" type="button" hidden>Retake</button>
+      </div>
+      <p id="captureMsg" class="msg" role="status"></p>
+    </section>
+
+    <!-- STEP 2: loading -->
+    <section id="stepLoading" class="card center" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <h2>Reading your face shape, skin tone and hair...</h2>
+      <p class="sub">This takes about 5 to 15 seconds.</p>
+    </section>
+
+    <!-- STEP 3: results -->
+    <section id="stepResults" hidden>
+      <div class="card">
+        <div class="resHead">
+          <img id="resPhoto" alt="Your photo">
+          <div class="facts" id="facts"></div>
+        </div>
+        <p id="shapeReason" class="sub"></p>
+      </div>
+
+      <h2 class="h2">Your best haircuts</h2>
+      <div id="recs"></div>
+
+      <div class="card" id="extras"></div>
+
+      <div class="row">
+        <button class="btn ghost" id="btnAgain" type="button">Scan again</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>HairyStylo is advice, not a guarantee. Always talk it through with your barber or stylist.</footer>
+  <script src="app.js"></script>
+</body>
+</html>
