@@ -6,6 +6,7 @@
 
      score = 55% face-shape fit      (blended over the shape probabilities)
            + 25% hair-type fit       (straight / wavy / curly / coily)
+             (and cuts that don't suit your hair type are pushed down further)
            + 12% length preference
            +  8% maintenance preference
 
@@ -63,10 +64,14 @@ HS.Recommender = (function () {
       const hf = style.hair[profile.hairType] ?? 0.5;
       const lf = lengthFit(style, profile.lengthPref);
       const mf = maintFit(style, profile.maintPref);
-      const score = W.shape * sf + W.hair * hf + W.length * lf + W.maint * mf;
+      // hair type is a hard requirement: a cut that doesn't suit your natural texture is pushed down the list
+      const gate = hf >= 0.7 ? 1 : 0.45 + 0.55 * Math.pow(hf / 0.7, 2);
+      // small bonus for cuts designed for curls/coils when that's your hair type
+      const bonus = (profile.hairType === 'curly' || profile.hairType === 'coily') && hf >= 0.9 && (style.hair.straight ?? 1) <= 0.2 ? 0.05 : 0;
+      const score = (W.shape * sf + W.hair * hf + W.length * lf + W.maint * mf) * gate + bonus;
       const why = reasonsFor(style, profile.shape, profile.hairType);
       return {
-        style, score, pct: Math.round(score * 100),
+        style, score: Math.min(score, 1), pct: Math.min(100, Math.round(score * 100)),
         parts: { shape: sf, hair: hf, length: lf, maint: mf },
         reasons: why.reasons, cautions: why.cautions
       };

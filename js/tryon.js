@@ -35,6 +35,12 @@ HS.TryOn = (function () {
   }
 
   /* ---------- the instruction we send with your photo ---------- */
+  const TEXTURE = {
+    curly: 'Hair texture: their natural hair is CURLY (defined spiral curls, type 3). Show real, springy natural curls with a visible curl pattern and natural frizz-free clumps. Do NOT straighten, relax or loosen the curls and do not turn them into waves.',
+    coily: 'Hair texture: their natural hair is COILY / kinky (tight coils, type 4A–4C). Show authentic tight natural coils, with the natural shrinkage and volume of coily hair; protective styles (twists, braids, locs, cornrows) should look neat with clean parts. Do NOT straighten, relax or loosen the texture.',
+    wavy: 'Hair texture: their natural hair is WAVY (loose S-shaped waves); keep the waves natural.',
+    straight: 'Hair texture: their natural hair is straight; keep it naturally straight and smooth.'
+  };
   function buildPrompt(o) {
     const st = o.style, person = o.gender === 'female' ? 'woman' : 'man';
     const lines = [
@@ -44,7 +50,7 @@ HS.TryOn = (function () {
       `Exact cut (as a barber would do it): ${st.ask}`,
       `Clipper / length guide: ${st.guards}.`,
       `The new haircut fully replaces the current hair: remove any of the existing hair that does not belong to this cut (length, volume, flyaways), so the shape on the head matches the haircut description above exactly.`,
-      `Hair texture: their natural hair is ${o.hairType}; keep that natural texture wherever this cut allows it.`,
+      TEXTURE[o.hairType] || `Hair texture: their natural hair is ${o.hairType}; keep that natural texture wherever this cut allows it.`,
       o.colour.natural ? `Hair colour: keep their current natural hair colour.` : `Hair colour: ${o.colour.name} — a natural, salon-quality colour with realistic dimension.`
     ];
     if (o.angle === 'left' || o.angle === 'right') lines.splice(4, 0, `ANGLE: in this photo the person has turned their head to the ${o.angle} (about 35 degrees). Show the haircut as seen from this angle: the side of the head, temple, ear area, sideburn and the fade / taper of the cut must be clearly visible and match the described cut. Keep the head turned exactly as it is.`);
