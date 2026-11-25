@@ -6,13 +6,13 @@
     {
       id: 'm_surfer', gender: 'male', name: 'Surfer Hair (Long Textured Waves)', length: 'long', maint: 1, vibe: 'Beachy · Relaxed',
       fit: F(.95, .75, .9, .8, .9, .88, .75), hair: { straight: .8, wavy: 1, curly: .75, coily: .1 }, tags: ['soft-texture', 'face-framing', 'length-below-chin'],
-      desc: 'Longer, tousled hair that falls to the collar with natural movement and a lived-in, sea-salt texture.',
-      ask: 'Surfer hair — keep the length at the ears to the collar (15–25 cm on top), cut long layers with a point-cut for a loose, messy, textured finish, nothing blunt, leave the fringe long enough to tuck behind the ears.',
-      guards: 'Scissors only · 15–25 cm, long layers',
+      desc: 'Longer, tousled hair that falls to the jaw with natural movement and a lived-in, sea-salt texture.',
+      ask: 'Surfer hair — keep the length at the cheekbones to the jaw (12–18 cm on top), cut long layers with a point-cut for a loose, messy, textured finish, nothing blunt, leave the fringe long enough to tuck behind the ears.',
+      guards: 'Scissors only · cheekbone to jaw, long layers',
       steps: ['Cut the hair dry so you can see how it falls.', 'Take only 1–2 cm off the ends and leave the length.', 'Add long layers and point-cut the ends for a loose, separated texture.', 'Keep the front long enough to tuck behind the ears or sweep to the side.', 'Do not cut a hard line at the back; soften it.'],
       styling: ['Apply sea-salt spray on damp hair and scrunch', 'Air-dry or rough-dry with fingers', 'Finish with a pinch of matte paste for texture'],
       products: 'Sea-salt spray, matte paste', trim: 'Every 8–10 weeks',
-      render: { top: 'messy', vol: .3, sides: 'long', len: 'collar', layers: .6, frame: .5, texture: 'wavy' }
+      render: { top: 'messy', vol: .3, sides: 'long', len: 'jaw', layers: .6, frame: .5, texture: 'wavy' }
     },
     {
       id: 'm_manbun', gender: 'male', name: 'Long Hair with Undercut (Man Bun)', length: 'long', maint: 2, vibe: 'Edgy · Modern',

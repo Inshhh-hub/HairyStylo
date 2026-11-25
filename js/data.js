@@ -475,9 +475,9 @@ HS.HAIRSTYLES = [
     fit: { oval: .9, round: .5, square: .85, oblong: .4, heart: .85, diamond: .8, triangle: .55 },
     hair: { straight: .85, wavy: .95, curly: .75, coily: .5 },
     tags: ['length-below-chin', 'face-framing', 'soft-texture', 'side-volume'],
-    desc: 'Shoulder-length layered hair that can be worn down or tied up into a bun.',
-    ask: 'Long layers — keep length at the shoulders, add long layers starting at the chin, a few face-framing pieces, point-cut ends.',
-    guards: 'Scissor cut · shoulder length',
+    desc: 'Layered hair that falls to the cheekbones or jaw and can be worn down or tied back.',
+    ask: 'Long layers — keep the length at cheekbone to jaw level, add long layers starting at the cheekbones, a few face-framing pieces, point-cut ends.',
+    guards: 'Scissor cut · cheekbone to jaw length',
     steps: [
       'Trim 1–2 cm of split ends from the perimeter, keeping the length at the shoulders.',
       'Cut long layers by lifting to 90° with a guide at the top of the head at chin length.',
@@ -487,7 +487,7 @@ HS.HAIRSTYLES = [
     ],
     styling: ['Leave-in conditioner + a little oil on the ends', 'Air-dry or diffuse for waves', 'Tie into a loose bun with a fabric hair tie'],
     products: 'Leave-in conditioner, hair oil', trim: 'Every 8–10 weeks',
-    render: { top: 'part', part: 'center', vol: .14, sides: 'long', len: 'shoulder', layers: .5, frame: .45 }
+    render: { top: 'part', part: 'center', vol: .14, sides: 'long', len: 'jaw', layers: .5, frame: .45 }
   },
   {
     id: 'm_mullet', gender: 'male', name: 'Modern Mullet', length: 'medium', maint: 2, vibe: 'Trendy · Edgy',
@@ -554,9 +554,9 @@ HS.HAIRSTYLES = [
     fit: { oval: 1, round: .85, square: .85, oblong: .55, heart: .85, diamond: .9, triangle: .8 },
     hair: { straight: 1, wavy: 1, curly: .8, coily: .6 },
     tags: ['length-below-chin', 'face-framing', 'soft-texture'],
-    desc: 'Length past the shoulders with long, soft layers and face-framing pieces from the cheekbones down.',
-    ask: 'Long layers — keep my length past the shoulders, long layers starting around the chin, face-framing pieces from the cheekbones down, soft point-cut ends.',
-    guards: 'Scissor cut · layers from chin length',
+    desc: 'Length down to the collarbone with long, soft layers and face-framing pieces from the cheekbones down.',
+    ask: 'Long layers — keep my length down to the collarbone, long layers starting around the chin, face-framing pieces from the cheekbones down, soft point-cut ends.',
+    guards: 'Scissor cut · collarbone length, layers from chin length',
     steps: [
       'Comb hair straight down and set the outline first — dust 1–2 cm off the ends, keeping the length past the shoulders.',
       'Take a centre guide at the top of the head, lift it straight up (90°) and cut the shortest layer to sit at chin/collarbone level.',
@@ -567,7 +567,7 @@ HS.HAIRSTYLES = [
     ],
     styling: ['Use a heat protectant first', 'Blow-dry with a round brush, turning the ends away from your face', 'Or air-dry with a light mousse for natural movement'],
     products: 'Heat protectant, light serum', trim: 'Every 8–10 weeks',
-    render: { top: 'part', part: 'side', vol: .14, sides: 'long', len: 'chest', layers: .6, frame: .6 }
+    render: { top: 'part', part: 'side', vol: .14, sides: 'long', len: 'shoulder', layers: .6, frame: .6 }
   },
   {
     id: 'w_curtain', gender: 'female', name: 'Curtain Bangs & Layers', length: 'medium', maint: 2, vibe: 'Trendy · Romantic',
@@ -727,7 +727,7 @@ HS.HAIRSTYLES = [
     ],
     styling: ['Blow-dry in sections with a big round brush, rolling away from the face', 'Or set the top layers in velcro rollers for a blow-out look', 'Light shine spray to finish'],
     products: 'Large round brush, velcro rollers', trim: 'Every 8 weeks',
-    render: { top: 'part', part: 'center', vol: .3, sides: 'long', len: 'chest', layers: .7, frame: .95, flick: true }
+    render: { top: 'part', part: 'center', vol: .3, sides: 'long', len: 'shoulder', layers: .7, frame: .95, flick: true }
   },
   {
     id: 'w_sideswept', gender: 'female', name: 'Side-Swept Bangs & Long Layers', length: 'long', maint: 2, vibe: 'Classic · Flattering',
@@ -747,7 +747,7 @@ HS.HAIRSTYLES = [
     ],
     styling: ['Blow-dry the fringe across the forehead with a flat brush', 'Loose curls or waves through the lengths', 'Light hairspray to hold the sweep'],
     products: 'Flat brush, light hairspray', trim: 'Fringe every 4–6 weeks',
-    render: { top: 'part', part: 'side', vol: .16, sides: 'long', len: 'chest', fringe: 'side', layers: .5, frame: .6 }
+    render: { top: 'part', part: 'side', vol: .16, sides: 'long', len: 'shoulder', fringe: 'side', layers: .5, frame: .6 }
   },
   {
     id: 'w_blunt', gender: 'female', name: 'Blunt Shoulder-Length Cut', length: 'medium', maint: 1, vibe: 'Sleek · Minimal',
@@ -861,7 +861,7 @@ HS.HAIRSTYLES = [
     ],
     styling: ['Blow-dry the fringe first, side to side with a flat brush', 'Dry shampoo on the fringe keeps it airy', 'Lengths: straight or loose waves'],
     products: 'Flat brush, dry shampoo', trim: 'Fringe every 3–4 weeks',
-    render: { top: 'part', part: 'none', vol: .12, sides: 'long', len: 'chest', fringe: 'wispy', layers: .4, frame: .45 }
+    render: { top: 'part', part: 'none', vol: .12, sides: 'long', len: 'shoulder', fringe: 'wispy', layers: .4, frame: .45 }
   },
   {
     id: 'w_afro', gender: 'female', name: 'Rounded Natural Afro', length: 'medium', maint: 2, vibe: 'Striking · Natural',

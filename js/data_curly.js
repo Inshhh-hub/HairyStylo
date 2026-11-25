@@ -264,7 +264,7 @@
     id: 'w_longcurly', gender: 'female', name: 'Long Curly Layers', length: 'long', maint: 2, vibe: 'Romantic · Natural',
     fit: LONG, hair: { straight: 0, wavy: .85, curly: 1, coily: .7 }, tags: ['length-below-chin', 'soft-texture', 'face-framing'],
     desc: 'Long natural curls with long layers for movement and volume, with face-framing curls that frame the cheekbones.',
-    ask: 'Long curly layers — keep the length (mid-back or below the shoulders), cut dry curl by curl with long layers for bounce, soft face-framing curls around the cheekbones, dust the ends only.',
+    ask: 'Long curly layers — keep the length down to the collarbone (not longer), cut dry curl by curl with long layers for bounce, soft face-framing curls around the cheekbones, dust the ends only.',
     guards: 'Dry cut · long layers, trim ends only',
     steps: [
       'Cut dry in the natural curl pattern.',
@@ -275,7 +275,7 @@
     ],
     styling: ['Deep condition weekly', 'Leave-in + curl cream, scrunch on wet hair', 'Sleep on satin, "pineapple" the hair'],
     products: 'Deep conditioner, leave-in, curl cream', trim: 'Every 10–12 weeks',
-    render: { top: 'curly', vol: .34, sides: 'long', len: 'chest', layers: .55, frame: .5, texture: 'curly' }
+    render: { top: 'curly', vol: .34, sides: 'long', len: 'shoulder', layers: .55, frame: .5, texture: 'curly' }
   },
   {
     id: 'w_curlypixie', gender: 'female', name: 'Curly Pixie (Tapered Curls)', length: 'short', maint: 2, vibe: 'Bold · Playful',
@@ -334,8 +334,8 @@
     id: 'w_braids', gender: 'female', name: 'Knotless Braids (Protective)', length: 'long', maint: 1, vibe: 'Protective · Elegant',
     fit: LONG, hair: { straight: 0, wavy: 0, curly: .8, coily: 1 }, tags: ['length-below-chin', 'face-framing'],
     desc: 'Long braids that start flat and lightly feed in extra hair so they are lighter and gentler on the scalp than traditional box braids.',
-    ask: 'Knotless braids — medium size, mid-back length, no knot at the root (feed-in braiding), not too tight at the hairline, parts neat and straight.',
-    guards: 'Medium knotless braids · mid-back',
+    ask: 'Knotless braids — medium size, collarbone length, no knot at the root (feed-in braiding), not too tight at the hairline, parts neat and straight.',
+    guards: 'Medium knotless braids · collarbone length',
     steps: [
       'Detangle and moisturise the hair and prepare the scalp.',
       'Section the hair neatly in a grid.',
@@ -345,7 +345,7 @@
     ],
     styling: ['Moisturise the scalp lightly every few days', 'Sleep in a satin bonnet or scarf', 'Take them out after about 6–8 weeks'],
     products: 'Scalp oil, satin bonnet, edge control', trim: 'Redo every 6–8 weeks',
-    render: { top: 'twists', vol: .3, sides: 'long', len: 'chest', layers: .1, frame: .3, texture: 'coily' }
+    render: { top: 'twists', vol: .3, sides: 'long', len: 'shoulder', layers: .1, frame: .3, texture: 'coily' }
   },
   {
     id: 'w_bantu', gender: 'female', name: 'Bantu Knot-Out', length: 'medium', maint: 2, vibe: 'Springy · Defined',
