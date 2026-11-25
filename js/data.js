@@ -359,8 +359,8 @@ HS.HAIRSTYLES = [
     hair: { straight: .9, wavy: 1, curly: .75, coily: .4 },
     tags: ['fringe', 'soft-texture', 'side-volume'],
     desc: 'A relaxed, longer top brushed forward into a soft fringe near the eyebrows, with natural, fuller sides.',
-    ask: 'Textured fringe — #3–#4 on the sides with a low taper, 6–8 cm on top, fringe falling to just above my eyebrows, lots of texture.',
-    guards: '#3–#4 sides, #2 low taper · 6–8 cm on top',
+    ask: 'Textured fringe — #3–#4 on the sides with a low taper, 8–10 cm on top (clearly longer than a crop), heavily point-cut and razored for choppy, separated texture, fringe falling to just above my eyebrows.',
+    guards: '#3–#4 sides, #2 low taper · 8–10 cm on top',
     steps: [
       'Sides & back: #3 or #4 guard with a low taper (#2) at the neckline and around the ears; keep the sides fuller.',
       'Top: cut 6–8 cm with point-cutting, layering it so it moves forward naturally.',

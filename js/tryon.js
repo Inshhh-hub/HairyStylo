@@ -56,6 +56,12 @@ HS.TryOn = (function () {
     wavy: 'Beard texture: slightly wavy natural beard hair.',
     straight: 'Beard texture: straight to slightly wavy natural beard hair.'
   };
+  const LENGTH = {
+    short: 'LENGTH: a short cut — about 2–6 cm on top, with the sides tapered or faded shorter.',
+    medium: 'LENGTH: a MEDIUM-length cut — clearly longer than a short cut: about 7–12 cm of hair on top that falls forward over the forehead (fringe to the eyebrows) and the sides cover the tops of the ears or end at the ears. If the person\'s current hair is shorter than this, make it visibly longer and fuller; do not keep the current short length.',
+    long: 'LENGTH: a LONG cut — the hair reaches at least the jaw and covers the ears, with length and volume clearly visible (15 cm or more). If the person\'s current hair is shorter, make it visibly much longer and fuller; do not keep the current short length.'
+  };
+  const TEXTURED = 'TEXTURE: the hair on top must look clearly TEXTURED and lived-in: separated, choppy, piece-y strands (point-cut ends) with visible movement, layers and volume, a matte natural finish. Not flat, not neatly combed, not a smooth uniform bowl shape, no slicked-down look.';
   function buildPrompt(o) {
     const st = o.style, person = o.gender === 'female' ? 'woman' : 'man';
     const lines = [
@@ -64,6 +70,8 @@ HS.TryOn = (function () {
       `NEW HAIRCUT: "${st.name}". ${st.desc}`,
       `Exact cut (as a barber would do it): ${st.ask}`,
       `Clipper / length guide: ${st.guards}.`,
+      LENGTH[st.length] || '',
+      /textur|messy|choppy|shag|mullet|wolf|crop|fringe|quiff|waves/i.test(st.name) || (st.tags || []).includes('soft-texture') ? TEXTURED : '',
       `The new haircut fully replaces the current hair: remove any of the existing hair that does not belong to this cut (length, volume, flyaways), so the shape on the head matches the haircut description above exactly.`,
       TEXTURE[o.hairType] || `Hair texture: their natural hair is ${o.hairType}; keep that natural texture wherever this cut allows it.`,
       o.colour.natural ? `Hair colour: keep their current natural hair colour.` : `Hair colour: ${o.colour.name} — a natural, salon-quality colour with realistic dimension.`

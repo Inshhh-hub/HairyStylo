@@ -68,7 +68,9 @@ HS.Recommender = (function () {
       const gate = hf >= 0.7 ? 1 : 0.45 + 0.55 * Math.pow(hf / 0.7, 2);
       // small bonus for cuts designed for curls/coils when that's your hair type
       const bonus = (profile.hairType === 'curly' || profile.hairType === 'coily') && hf >= 0.9 && (style.hair.straight ?? 1) <= 0.2 ? 0.05 : 0;
-      const score = (W.shape * sf + W.hair * hf + W.length * lf + W.maint * mf) * gate + bonus;
+      // a length you asked for is a firm requirement too: cuts of the wrong length are pushed down
+      const lgate = lf >= 1 ? 1 : lf >= 0.5 ? 0.88 : 0.6;
+      const score = (W.shape * sf + W.hair * hf + W.length * lf + W.maint * mf) * gate * lgate + bonus;
       const why = reasonsFor(style, profile.shape, profile.hairType);
       return {
         style, score: Math.min(score, 1), pct: Math.min(100, Math.round(score * 100)),

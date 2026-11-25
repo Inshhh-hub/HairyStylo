@@ -78,7 +78,7 @@ module.exports = async (req, res) => {
   const img = body && parseImage(body.image);
   if (!img) return send(res, 400, { ok: false, code: 'BAD_IMAGE', message: 'Photo missing or too large. Please rescan.' });
   const small = parseImage(body.small) || img;
-  const userPrompt = String(body.prompt || '').replace(/\u0000/g, '').trim().slice(0, 3600);
+  const userPrompt = String(body.prompt || '').replace(/\u0000/g, '').trim().slice(0, 4800);
   if (userPrompt.length < 10) return send(res, 400, { ok: false, code: 'BAD_PROMPT', message: 'No haircut description was sent.' });
   const p = userPrompt + RULES;
 
