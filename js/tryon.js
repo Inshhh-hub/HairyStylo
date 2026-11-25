@@ -59,14 +59,16 @@ HS.TryOn = (function () {
   const LENGTH = {
     short: 'LENGTH: a short cut — about 2–6 cm on top, with the sides tapered or faded shorter.',
     medium: 'LENGTH: a MEDIUM-length cut — clearly longer than a short cut but NOT long: about 7–12 cm of hair on top that falls forward over the forehead (fringe to the eyebrows) and the sides end around the ears. If the current hair is shorter, make it visibly longer and fuller, but stay within this length: it must never reach below the ears at the sides.',
-    long: 'LENGTH: a LONG cut for a man, kept at CHEEKBONE-TO-JAW length: the hair on the sides and back reaches about the cheekbones down to the jawline and covers the ears (about 12–18 cm on top), clearly longer than the photo if the current hair is short — but it must NEVER go below the jawline or chin: no shoulder-length, no chest-length, no very long hair.',
+    long: 'LENGTH: a LONG cut for a man, kept at CHEEKBONE length: the hair on the sides and back ends at about CHEEKBONE level and covers the ears (about 10–15 cm on top), clearly longer than the photo if the current hair is short — but it must NEVER go below the cheekbones: nothing at the jawline, chin, neck or shoulders.',
     shortWomen: 'LENGTH: a SHORT cut for a woman: the hair ends at the JAWLINE at the longest (anything from a pixie to a jaw-length bob). It must never go below the jaw.',
     mediumWomen: 'LENGTH: a MEDIUM cut for a woman: the hair ends BETWEEN THE NECK AND THE COLLARBONE — below the jawline and above the collarbone (like a long bob / lob). It must not reach the collarbone and must not be above the jaw.',
     longWomen: 'LENGTH: a LONG cut for a woman: the hair reaches the COLLARBONE and stops there — clearly longer than a medium cut, but NEVER past the collarbone: no chest-length, no mid-back, no waist-length hair.'
   };
-  const TEXTURED = 'TEXTURE: the hair on top must look clearly TEXTURED and lived-in: separated, choppy, piece-y strands (point-cut ends) with visible movement, layers and volume, a matte natural finish. Not flat, not neatly combed, not a smooth uniform bowl shape, no slicked-down look.';
+  const TEXTURED = 'TEXTURE (IMPORTANT, clearly visible in the photo): the hair on top must be heavily TEXTURED, as if styled with matte clay or sea-salt spray: it is broken up into many separated, choppy, jagged, piece-y clumps with sharp point-cut tips, uneven strand lengths, visible gaps between the clumps, lots of lift, volume and movement, and the fringe split into individual spiky pieces. Strong highlights and shadows between the pieces so the texture is obvious. NOT smooth, NOT flat, NOT sleek, NOT neatly combed, NOT a solid uniform helmet or bowl shape.';
+  const TEXTURE_STRAIGHT = 'Hair type: fine to straight strands, but the STYLING must still be strongly textured and piece-y as described in the TEXTURE line above; do not smooth, flatten or comb it.';
   function buildPrompt(o) {
     const st = o.style, person = o.gender === 'female' ? 'woman' : 'man';
+    const isTex = /textur|messy|choppy|shag|mullet|wolf|crop|fringe|quiff|waves|layer|spik|razor|undercut|pomp/i.test(st.name) || (st.tags || []).includes('soft-texture');
     const lines = [
       `Edit this photo of a ${person}. Give them a new, professionally cut and freshly styled haircut. Change ONLY the hair${o.gender === 'male' ? ' and facial hair' : ''}.`,
       ``,
@@ -74,9 +76,9 @@ HS.TryOn = (function () {
       `Exact cut (as a barber would do it): ${st.ask}`,
       `Clipper / length guide: ${st.guards}.`,
       (o.gender === 'female' ? LENGTH[st.length + 'Women'] : LENGTH[st.length]) || '',
-      /textur|messy|choppy|shag|mullet|wolf|crop|fringe|quiff|waves/i.test(st.name) || (st.tags || []).includes('soft-texture') ? TEXTURED : '',
       `The new haircut fully replaces the current hair: remove any of the existing hair that does not belong to this cut (length, volume, flyaways), so the shape on the head matches the haircut description above exactly.`,
-      TEXTURE[o.hairType] || `Hair texture: their natural hair is ${o.hairType}; keep that natural texture wherever this cut allows it.`,
+      (isTex && (o.hairType === 'straight' || o.hairType === 'wavy')) ? TEXTURE_STRAIGHT : TEXTURE[o.hairType] || `Hair texture: their natural hair is ${o.hairType}; keep that natural texture wherever this cut allows it.`,
+      isTex ? TEXTURED : '',
       o.colour.natural ? `Hair colour: keep their current natural hair colour.` : `Hair colour: ${o.colour.name} — a natural, salon-quality colour with realistic dimension.`
     ];
     if (o.angle === 'left' || o.angle === 'right') lines.splice(4, 0, `ANGLE: in this photo the person has turned their head to the ${o.angle} (about 35 degrees). Show the haircut as seen from this angle: the side of the head, temple, ear area, sideburn and the fade / taper of the cut must be clearly visible and match the described cut. Keep the head turned exactly as it is.`);
