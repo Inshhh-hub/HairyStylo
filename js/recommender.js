@@ -79,7 +79,13 @@ HS.Recommender = (function () {
       };
     });
     results.sort((a, b) => b.score - a.score);
-    return results;
+    /* keep the top of the list varied: the first 6 places are all different cut families, the next 6 allow two of a kind */
+    const first = [], later = [], seen = {};
+    results.forEach(r => {
+      const f = r.style.family || r.style.id;
+      if (first.length < 12 && (seen[f] || 0) < (first.length < 6 ? 1 : 2)) { first.push(r); seen[f] = (seen[f] || 0) + 1; } else later.push(r);
+    });
+    return first.concat(later);
   }
 
   /* styles to avoid = worst face-shape fit, with the reason why */
